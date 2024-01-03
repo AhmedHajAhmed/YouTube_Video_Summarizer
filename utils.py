@@ -37,11 +37,12 @@ def clean_transcript(transcript: str) -> str:
         raise ValueError("Input text cannot be empty.")
     if re.match(r'^[!@#$%^&*(),.?":{}|<>_+=\[\];\'\\`~]*$', transcript):
         raise ValueError("Input text consists only of special characters.")
-    transcript = re.sub(r'\[.*?\]', '', transcript)         # Remove square brackets and their contents
-    transcript = re.sub(r'\\n', ' ', transcript)            # Replace newline characters with a space
-    transcript = ' '.join(transcript.split())               # Remove extra spaces
-    transcript = re.sub(r'[^\w\s.\']', '', transcript)      # Remove special characters excluding dots and apostrophes
-    # transcript = re.sub(r'\s+(?=[A-Z])', '', transcript)    # Remove leading white spaces at the beginning of each sentence
+    transcript = re.sub(r'\[.*?\]', '', transcript)                     # Remove square brackets and their contents
+    transcript = re.sub(r'\\n', ' ', transcript)                        # Replace newline characters with a space
+    transcript = ' '.join(transcript.split())                           # Remove extra spaces
+    transcript = re.sub(r'[^\w\s.\']', '', transcript)                  # Remove special characters excluding dots and apostrophes
+    pattern = re.compile(r'\s*metadata\'source\'\s*\'[^\']*\'\s*$')     # Define a pattern to match metadata at the end of the string
+    transcript = re.sub(pattern, '', transcript)                        # Remove the unnecessary text using regex substitution
     return transcript
 
 
