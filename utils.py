@@ -93,18 +93,20 @@ def combine_sentences_into_chunks(sentences: list[str]) -> list[str]:
 
 def get_summary(URL: str) -> str:
     """
-
+    This function is used to get the summary of a given YouTube video URL 
+    :param URL: a URL for a YouTube video
+    :returns: the summary of a given YouTube video URL 
     """
     transcript = get_video_transcript_from_url(URL)
     transcript = clean_transcript(transcript)
     sentences = divide_transcript_into_sentences(transcript)
     chunks = combine_sentences_into_chunks(sentences)
     summarizer = pipeline("summarization")
-    print(transcript)
-    print("\n", chunks, "\n")
-    print("num of chunks: ", len(chunks), "\n")
-    print("num of full stops in transcript: ", transcript.count("."))
-    print("." not in transcript)
+    # print(transcript)
+    # print("\n", chunks, "\n")
+    # print("num of chunks: ", len(chunks), "\n")
+    # print("num of full stops in transcript: ", transcript.count("."))
+    # print("." not in transcript)
     summary = summarizer(chunks, max_length=100, min_length=1, do_sample=False)
     summary = ' '.join([summ['summary_text'] for summ in summary])
     return summary
