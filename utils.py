@@ -1,5 +1,6 @@
 from transformers import pipeline
 from langchain.document_loaders import YoutubeLoader
+from deepmultilingualpunctuation import PunctuationModel
 import re
 
 
@@ -23,6 +24,9 @@ def get_video_transcript_from_url(video_url: str) -> str:
     transcript = str(transcript)        # convert FAISS object into str
     if not transcript:
         raise RuntimeError("The video doesn't have a transcript.")
+    if transcript.count(".") < 25:      # if transcript does not have punctuations 
+        model = PunctuationModel()
+        transcript = model.restore_punctuation(transcript)
     return transcript
 
 
@@ -41,8 +45,7 @@ def clean_transcript(transcript: str) -> str:
     transcript = re.sub(r'\\n', ' ', transcript)                        # Replace newline characters with a space
     transcript = ' '.join(transcript.split())                           # Remove extra spaces
     transcript = re.sub(r'[^\w\s.\']', '', transcript)                  # Remove special characters excluding dots and apostrophes
-    pattern = re.compile(r'\s*metadata\'source\'\s*\'[^\']*\'\s*$')     # Define a pattern to match metadata at the end of the string
-    transcript = re.sub(pattern, '', transcript)                        # Remove the unnecessary text using regex substitution
+    transcript = transcript.split("metadata'source'")[0]                # Remove the unnecessary text (metadata code)
     return transcript
 
 
@@ -52,7 +55,6 @@ def divide_transcript_into_sentences(transcript: str) -> list[str]:
     :param transcript: a transcript string
     :returns: a list consisting of sentences
     """
-    transcript = clean_transcript(transcript)
     transcript = transcript.replace('.', '.<eos>')
     transcript = transcript.replace('?', '?<eos>')
     transcript = transcript.replace('!', '!<eos>')
@@ -77,7 +79,7 @@ def combine_sentences_into_chunks(sentences: list[str]) -> list[str]:
                 current_chunk += 1
                 chunks.append(sentence.split(' '))
         else:
-            print(current_chunk)
+            # print(current_chunk)
             chunks.append(sentence.split(' '))
 
     # join the words in each chunk back into a single string
@@ -89,23 +91,23 @@ def combine_sentences_into_chunks(sentences: list[str]) -> list[str]:
 
 
 
+def get_summary(URL: str) -> str:
+    """
 
+    """
+    transcript = get_video_transcript_from_url(URL)
+    transcript = clean_transcript(transcript)
+    sentences = divide_transcript_into_sentences(transcript)
+    chunks = combine_sentences_into_chunks(sentences)
+    summarizer = pipeline("summarization")
+    print(transcript)
+    print("\n", chunks, "\n")
+    print("num of chunks: ", len(chunks), "\n")
+    print("num of full stops in transcript: ", transcript.count("."))
+    print("." not in transcript)
+    summary = summarizer(chunks, max_length=100, min_length=1, do_sample=False)
+    summary = ' '.join([summ['summary_text'] for summ in summary])
+    return summary
 
-
-# URL = "https://www.youtube.com/watch?v=rtgN27z0oi0"
-URL = "https://www.youtube.com/watch?v=RR2DpT_Eie8"
-transcript = get_video_transcript_from_url(URL)
-sentences = divide_transcript_into_sentences(transcript)
-chunks = combine_sentences_into_chunks(sentences)
-for c in chunks:
-    print(c)
-    print(len(c.split()))
-    print("\n")
-
-summarizer = pipeline("summarization")
-res = summarizer(chunks, max_length=150, min_length=5, do_sample=False)
-print(len(res))
-res = ' '.join([summ['summary_text'] for summ in res])
-print(res)
 
 
